@@ -1,0 +1,30 @@
+{
+    "name": "tp-comm-evenementielle",
+    "version": "1.0.0",
+    "description": "Application WebSocket temps réel pour la programmation événementielle.",
+    "main": "server.js",
+    "scripts": {
+        "dev": "node server.js",
+        "build": "next build",
+        "start": "cross-env NODE_ENV=production node server.js",
+        "test": "node --test"
+    },
+    "keywords": [
+        "temps reel",
+        "websocket",
+        "interactions",
+        "tp"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "next": "^14.1.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "uuid": "^9.0.1",
+        "ws": "^8.17.1"
+    },
+    "devDependencies": {
+        "cross-env": "^7.0.3"
+    }
+}
