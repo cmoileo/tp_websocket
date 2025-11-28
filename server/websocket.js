@@ -1,7 +1,7 @@
 const { WebSocketServer } = require("ws");
 const { v4: uuid } = require("uuid");
 
-const ADMIN_CODE = process.env.ADMIN_CODE || "admin123";
+const ADMIN_CODE = "root";
 const clients = new Map();
 
 function getPublicState() {
