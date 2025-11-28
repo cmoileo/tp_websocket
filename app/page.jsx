@@ -17,6 +17,7 @@ export default function HomePage() {
     privateMessages,
     isConnected,
     error,
+    roomsScoreboard,
     createRoom,
     joinRoom,
     disconnect,
@@ -47,6 +48,7 @@ export default function HomePage() {
           onJoinRoom={handleJoinRoom}
           error={error}
           onClearError={clearError}
+          roomsScoreboard={roomsScoreboard}
         />
       ) : (
         <Dashboard

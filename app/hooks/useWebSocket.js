@@ -14,6 +14,7 @@ const initialState = {
   isConnected: false,
   error: "",
   createdRoomId: null,
+  roomsScoreboard: [],
 };
 
 export function useWebSocket() {
@@ -78,6 +79,11 @@ export function useWebSocket() {
 
       switch (type) {
         case WS_MESSAGE_TYPES.WELCOME:
+          send({ type: WS_MESSAGE_TYPES.GET_SCOREBOARD });
+          break;
+
+        case WS_MESSAGE_TYPES.ROOMS_SCOREBOARD:
+          updateState({ roomsScoreboard: payload.rooms || [] });
           break;
 
         case WS_MESSAGE_TYPES.ROOM_CREATED:
@@ -335,6 +341,15 @@ export function useWebSocket() {
     updateState({ error: "" });
   }, [updateState]);
 
+  const fetchScoreboard = useCallback(() => {
+    send({ type: WS_MESSAGE_TYPES.GET_SCOREBOARD });
+  }, [send]);
+
+  // Initialiser la connexion WebSocket au montage pour recevoir le scoreboard
+  useEffect(() => {
+    initSocket();
+  }, [initSocket]);
+
   useEffect(() => {
     return () => {
       if (wsRef.current) wsRef.current.close();
@@ -352,5 +367,6 @@ export function useWebSocket() {
     adjustScore,
     disconnectUser,
     clearError,
+    fetchScoreboard,
   };
 }

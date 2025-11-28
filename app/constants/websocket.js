@@ -15,6 +15,8 @@ export const WS_MESSAGE_TYPES = {
   REQUEST_DISCONNECT_USER: "request_disconnect_user",
   CREATE_ROOM: "create_room",
   ROOM_CREATED: "room_created",
+  GET_SCOREBOARD: "get_scoreboard",
+  ROOMS_SCOREBOARD: "rooms_scoreboard",
 };
 
 export const HEARTBEAT_INTERVAL = 15000;

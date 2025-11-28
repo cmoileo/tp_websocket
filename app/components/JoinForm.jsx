@@ -4,7 +4,48 @@ import { useState } from "react";
 import { AVATAR_CHOICES } from "../constants/avatars";
 import { AvatarGrid } from "./AvatarGrid";
 
-export function JoinForm({ onCreateRoom, onJoinRoom, error, onClearError }) {
+function RoomsScoreboard({ rooms, onSelectRoom }) {
+  if (!rooms || rooms.length === 0) {
+    return (
+      <div className="scoreboard">
+        <h3>Active Rooms</h3>
+        <p className="scoreboard-empty">No active rooms</p>
+      </div>
+    );
+  }
+
+  const sortedRooms = [...rooms].sort((a, b) => b.totalScore - a.totalScore);
+
+  return (
+    <div className="scoreboard">
+      <h3>Active Rooms</h3>
+      <ul className="scoreboard-list">
+        {sortedRooms.map((room, index) => (
+          <li
+            key={room.id}
+            className="scoreboard-item"
+            onClick={() => onSelectRoom && onSelectRoom(room.id)}
+          >
+            <span className="scoreboard-rank">#{index + 1}</span>
+            <span className="scoreboard-id">{room.id}</span>
+            <span className="scoreboard-players">
+              {room.playerCount} player{room.playerCount !== 1 ? "s" : ""}
+            </span>
+            <span className="scoreboard-score">{room.totalScore} pts</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function JoinForm({
+  onCreateRoom,
+  onJoinRoom,
+  error,
+  onClearError,
+  roomsScoreboard,
+}) {
   const [mode, setMode] = useState("menu");
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(AVATAR_CHOICES[0]);
@@ -28,6 +69,11 @@ export function JoinForm({ onCreateRoom, onJoinRoom, error, onClearError }) {
     if (onClearError) onClearError();
   };
 
+  const handleSelectRoom = (selectedRoomId) => {
+    setRoomId(selectedRoomId);
+    switchMode("join");
+  };
+
   if (mode === "menu") {
     return (
       <section className="landing">
@@ -40,7 +86,10 @@ export function JoinForm({ onCreateRoom, onJoinRoom, error, onClearError }) {
             Join Room
           </button>
         </div>
-        {error && <p className="error-text">{error}</p>}
+        <RoomsScoreboard
+          rooms={roomsScoreboard}
+          onSelectRoom={handleSelectRoom}
+        />
       </section>
     );
   }

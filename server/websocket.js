@@ -45,6 +45,25 @@ function getRoomGlobalScore(roomId) {
   );
 }
 
+function getRoomsScoreboard() {
+  return Array.from(rooms.values()).map((room) => ({
+    id: room.id,
+    playerCount: Array.from(room.clients.values()).filter((c) => c.joined)
+      .length,
+    totalScore: getRoomGlobalScore(room.id),
+    createdAt: room.createdAt,
+  }));
+}
+
+function broadcastScoreboard() {
+  const scoreboard = getRoomsScoreboard();
+  clients.forEach((client) => {
+    if (!client.joined) {
+      sendToClient(client.id, "rooms_scoreboard", { rooms: scoreboard });
+    }
+  });
+}
+
 function sendToClient(clientId, type, payload) {
   const client = clients.get(clientId);
   if (!client) return;
@@ -95,6 +114,7 @@ function handleCreateRoom(client, payload) {
   const roomId = createRoom(adminCode);
 
   sendToClient(client.id, "room_created", { roomId });
+  broadcastScoreboard();
 }
 
 function handleJoin(client, payload) {
@@ -156,6 +176,8 @@ function handleJoin(client, payload) {
     },
     client.id
   );
+
+  broadcastScoreboard();
 }
 
 function handleGlobalMessage(client, payload) {
@@ -222,6 +244,8 @@ function handleScoreEvent(client, payload) {
   broadcastToRoom(client.roomId, "users_update", {
     users: getRoomPublicState(client.roomId),
   });
+
+  broadcastScoreboard();
 }
 
 function handleAdminDisconnect(client, payload) {
@@ -247,6 +271,10 @@ function handleAdminDisconnect(client, payload) {
   disconnectClient(targetId);
 }
 
+function handleGetScoreboard(client) {
+  sendToClient(client.id, "rooms_scoreboard", { rooms: getRoomsScoreboard() });
+}
+
 const messageHandlers = {
   create_room: handleCreateRoom,
   join: handleJoin,
@@ -254,6 +282,7 @@ const messageHandlers = {
   private_message: handlePrivateMessage,
   score_event: handleScoreEvent,
   request_disconnect_user: handleAdminDisconnect,
+  get_scoreboard: handleGetScoreboard,
   ping: (client) => sendToClient(client.id, "pong", { timestamp: Date.now() }),
 };
 
@@ -273,6 +302,7 @@ function processMessage(client, raw) {
     !client.joined &&
     type !== "join" &&
     type !== "create_room" &&
+    type !== "get_scoreboard" &&
     type !== "ping"
   ) {
     sendToClient(client.id, "error", { message: "Authentication required" });
@@ -300,6 +330,7 @@ function cleanup(client) {
 
       if (room.clients.size === 0) {
         rooms.delete(roomId);
+        broadcastScoreboard();
       } else if (client.joined) {
         broadcastToRoom(roomId, "user_left", {
           id: client.id,
