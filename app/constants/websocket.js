@@ -13,6 +13,8 @@ export const WS_MESSAGE_TYPES = {
   WELCOME: "welcome",
   SCORE_EVENT: "score_event",
   REQUEST_DISCONNECT_USER: "request_disconnect_user",
+  CREATE_ROOM: "create_room",
+  ROOM_CREATED: "room_created",
 };
 
 export const HEARTBEAT_INTERVAL = 15000;

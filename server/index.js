@@ -1,7 +1,7 @@
-const { createWebSocketServer, clients, ADMIN_CODE } = require("./websocket");
+const { createWebSocketServer, clients, rooms } = require("./websocket");
 
 module.exports = {
   createWebSocketServer,
   clients,
-  ADMIN_CODE,
+  rooms,
 };

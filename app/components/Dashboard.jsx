@@ -12,6 +12,7 @@ export function Dashboard({
   users,
   globalScore,
   currentId,
+  roomId,
   isAdmin,
   chatMessages,
   privateMessages,
@@ -26,6 +27,7 @@ export function Dashboard({
       <TopBar
         name={name}
         avatar={avatar}
+        roomId={roomId}
         globalScore={globalScore}
         onDisconnect={onDisconnect}
       />

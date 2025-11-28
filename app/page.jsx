@@ -12,28 +12,42 @@ export default function HomePage() {
     globalScore,
     isAdmin,
     currentId,
+    roomId,
     chatMessages,
     privateMessages,
     isConnected,
     error,
-    connect,
+    createRoom,
+    joinRoom,
     disconnect,
     sendGlobalMessage,
     sendPrivateMessage,
     adjustScore,
     disconnectUser,
+    clearError,
   } = useWebSocket();
 
-  const handleJoin = ({ name, avatar, adminCode }) => {
-    if (!name.trim() || !avatar.trim()) return;
+  const handleCreateRoom = (adminCode, name, avatar) => {
+    if (!name.trim() || !avatar.trim() || !adminCode.trim()) return;
     setCredentials({ name, avatar });
-    connect(name, avatar, adminCode);
+    createRoom(adminCode, name, avatar);
+  };
+
+  const handleJoinRoom = (roomId, name, avatar, adminCode) => {
+    if (!name.trim() || !avatar.trim() || !roomId.trim()) return;
+    setCredentials({ name, avatar });
+    joinRoom(roomId, name, avatar, adminCode);
   };
 
   return (
     <div className="app-shell">
       {!isConnected ? (
-        <JoinForm onSubmit={handleJoin} error={error} />
+        <JoinForm
+          onCreateRoom={handleCreateRoom}
+          onJoinRoom={handleJoinRoom}
+          error={error}
+          onClearError={clearError}
+        />
       ) : (
         <Dashboard
           name={credentials.name}
@@ -41,6 +55,7 @@ export default function HomePage() {
           users={users}
           globalScore={globalScore}
           currentId={currentId}
+          roomId={roomId}
           isAdmin={isAdmin}
           chatMessages={chatMessages}
           privateMessages={privateMessages}

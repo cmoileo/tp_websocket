@@ -1,6 +1,6 @@
 "use client";
 
-export function TopBar({ name, avatar, globalScore, onDisconnect }) {
+export function TopBar({ name, avatar, roomId, globalScore, onDisconnect }) {
   return (
     <header className="topbar">
       <div className="identity">
@@ -9,6 +9,11 @@ export function TopBar({ name, avatar, globalScore, onDisconnect }) {
           <h2>{name}</h2>
           <p className="status-online">connected</p>
         </div>
+      </div>
+
+      <div className="room-info">
+        <strong>room</strong>
+        <span className="room-id">{roomId}</span>
       </div>
 
       <div className="score-summary">

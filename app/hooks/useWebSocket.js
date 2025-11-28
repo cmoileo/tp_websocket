@@ -8,16 +8,19 @@ const initialState = {
   globalScore: 0,
   isAdmin: false,
   currentId: null,
+  roomId: null,
   chatMessages: [],
   privateMessages: [],
   isConnected: false,
   error: "",
+  createdRoomId: null,
 };
 
 export function useWebSocket() {
   const [state, setState] = useState(initialState);
   const wsRef = useRef(null);
   const heartbeatRef = useRef(null);
+  const pendingJoinRef = useRef(null);
 
   const updateState = useCallback((updates) => {
     setState((prev) => ({ ...prev, ...updates }));
@@ -49,6 +52,7 @@ export function useWebSocket() {
         error: errorMessage,
       });
       stopHeartbeat();
+      pendingJoinRef.current = null;
     },
     [updateState, stopHeartbeat]
   );
@@ -76,16 +80,29 @@ export function useWebSocket() {
         case WS_MESSAGE_TYPES.WELCOME:
           break;
 
+        case WS_MESSAGE_TYPES.ROOM_CREATED:
+          updateState({ createdRoomId: payload.roomId, error: "" });
+          if (pendingJoinRef.current) {
+            const { name, avatar, adminCode } = pendingJoinRef.current;
+            send({
+              type: WS_MESSAGE_TYPES.JOIN,
+              payload: { roomId: payload.roomId, name, avatar, adminCode },
+            });
+          }
+          break;
+
         case WS_MESSAGE_TYPES.JOIN_SUCCESS: {
           const self = payload.users.find((user) => user.id === payload.id);
           updateState({
             currentId: payload.id,
+            roomId: payload.roomId,
             users: payload.users,
             globalScore: payload.globalScore,
             isAdmin: Boolean(self?.isAdmin),
             isConnected: true,
             error: "",
           });
+          pendingJoinRef.current = null;
           startHeartbeat();
           break;
         }
@@ -183,7 +200,7 @@ export function useWebSocket() {
           break;
       }
     },
-    [updateState, startHeartbeat, resolveUserName]
+    [updateState, startHeartbeat, resolveUserName, send]
   );
 
   const handleClose = useCallback(
@@ -197,33 +214,78 @@ export function useWebSocket() {
     [reset]
   );
 
-  const connect = useCallback(
-    (name, avatar, adminCode) => {
-      if (wsRef.current) {
-        wsRef.current.removeEventListener("close", handleClose);
-        wsRef.current.close();
+  const initSocket = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return wsRef.current;
+    }
+
+    if (wsRef.current) {
+      wsRef.current.removeEventListener("close", handleClose);
+      wsRef.current.close();
+    }
+
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsPath = process.env.NEXT_PUBLIC_WS_PATH || "/ws";
+    const socket = new WebSocket(
+      `${protocol}://${window.location.host}${wsPath}`
+    );
+
+    wsRef.current = socket;
+
+    socket.addEventListener("message", handleMessage);
+    socket.addEventListener("close", handleClose);
+    socket.addEventListener("error", () => reset("connection lost"));
+
+    return socket;
+  }, [handleMessage, handleClose, reset]);
+
+  const createRoom = useCallback(
+    (adminCode, name, avatar) => {
+      const socket = initSocket();
+      pendingJoinRef.current = { name, avatar, adminCode };
+
+      const sendCreate = () => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(
+            JSON.stringify({
+              type: WS_MESSAGE_TYPES.CREATE_ROOM,
+              payload: { adminCode },
+            })
+          );
+        }
+      };
+
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        sendCreate();
+      } else if (socket) {
+        socket.addEventListener("open", sendCreate, { once: true });
       }
-
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const wsPath = process.env.NEXT_PUBLIC_WS_PATH || "/ws";
-      const socket = new WebSocket(
-        `${protocol}://${window.location.host}${wsPath}`
-      );
-
-      wsRef.current = socket;
-
-      socket.addEventListener("open", () => {
-        send({
-          type: WS_MESSAGE_TYPES.JOIN,
-          payload: { name, avatar, adminCode: adminCode || null },
-        });
-      });
-
-      socket.addEventListener("message", handleMessage);
-      socket.addEventListener("close", handleClose);
-      socket.addEventListener("error", () => reset("connection lost"));
     },
-    [send, handleMessage, handleClose, reset]
+    [initSocket]
+  );
+
+  const joinRoom = useCallback(
+    (roomId, name, avatar, adminCode) => {
+      const socket = initSocket();
+
+      const sendJoin = () => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(
+            JSON.stringify({
+              type: WS_MESSAGE_TYPES.JOIN,
+              payload: { roomId, name, avatar, adminCode: adminCode || null },
+            })
+          );
+        }
+      };
+
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        sendJoin();
+      } else if (socket) {
+        socket.addEventListener("open", sendJoin, { once: true });
+      }
+    },
+    [initSocket]
   );
 
   const disconnect = useCallback(() => {
@@ -269,6 +331,10 @@ export function useWebSocket() {
     [send]
   );
 
+  const clearError = useCallback(() => {
+    updateState({ error: "" });
+  }, [updateState]);
+
   useEffect(() => {
     return () => {
       if (wsRef.current) wsRef.current.close();
@@ -278,11 +344,13 @@ export function useWebSocket() {
 
   return {
     ...state,
-    connect,
+    createRoom,
+    joinRoom,
     disconnect,
     sendGlobalMessage,
     sendPrivateMessage,
     adjustScore,
     disconnectUser,
+    clearError,
   };
 }
