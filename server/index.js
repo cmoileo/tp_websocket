@@ -1,3 +1,7 @@
-module.exports = require("../server.js");
+const { createWebSocketServer, clients, ADMIN_CODE } = require("./websocket");
 
-module.exports = { app, server, wss, start, clients, ADMIN_CODE };
+module.exports = {
+  createWebSocketServer,
+  clients,
+  ADMIN_CODE,
+};

@@ -1,9 +1,8 @@
 import "./globals.css";
-import "./styles.css";
 
 export const metadata = {
-  title: "Hub Temps Réel",
-  description: "Application WebSocket interactive",
+  title: "Terminal IRC",
+  description: "Secure WebSocket Channel",
 };
 
 export default function RootLayout({ children }) {
